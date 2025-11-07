@@ -1,23 +1,47 @@
 package ru.iteco.fmhandroid.ui.data;
 
+import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
+import static androidx.test.espresso.action.ViewActions.replaceText;
+import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.isRoot;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
+import android.os.IBinder;
 import android.view.View;
+import android.view.WindowManager;
 
 import androidx.test.espresso.PerformException;
+import androidx.test.espresso.Root;
 import androidx.test.espresso.UiController;
 import androidx.test.espresso.ViewAction;
+import androidx.test.espresso.ViewInteraction;
 import androidx.test.espresso.util.HumanReadables;
 import androidx.test.espresso.util.TreeIterables;
 
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 
 import java.util.concurrent.TimeoutException;
 
 public class DataHelper {
 
-    /** Perform action of waiting for a specific view id. */
+    public static final String rightLogin = "login2";
+    public static final String rightPassword = "password2";
+    public static final String wrongLogin = "ogin2";
+    public static final String wrongPassword = "assword2";
+
+    public static void enterData(ViewInteraction fieldName, String text) {
+        fieldName.check(matches(isDisplayed())).perform(replaceText(text), closeSoftKeyboard());
+    }
+
+    public static void tapButton(ViewInteraction buttonName) {
+        buttonName.check(matches(isDisplayed())).perform(click());
+    }
+
+    /*** Perform action of waiting for a specific view id. */
     // wait during 15 seconds for a view
     //onView(isRoot()).perform(waitId(R.id.dialogEditor, TimeUnit.SECONDS.toMillis(15)));
     public static ViewAction waitId(final int viewId, final long millis) {
@@ -59,5 +83,27 @@ public class DataHelper {
                         .build();
             }
         };
+    }
+
+    /** метод для определения всплывающих сообщений*/
+    public static class ToastMatcher extends TypeSafeMatcher<Root> {
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("is toast");
+        }
+
+        @Override
+        public boolean matchesSafely(Root root) {
+            int type = root.getWindowLayoutParams().get().type;
+            if ((type == WindowManager.LayoutParams.TYPE_TOAST)) {
+                IBinder windowToken = root.getDecorView().getWindowToken();
+                IBinder appToken = root.getDecorView().getApplicationWindowToken();
+                if (windowToken == appToken) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
