@@ -16,6 +16,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import static ru.iteco.fmhandroid.ui.data.DataHelper.rightLogin;
 import static ru.iteco.fmhandroid.ui.data.DataHelper.rightPassword;
@@ -29,7 +30,9 @@ import static ru.iteco.fmhandroid.ui.page.LoginPage.signInButton;
 
 import android.view.View;
 
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.ViewInteraction;
+import androidx.test.espresso.matcher.RootMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -58,7 +61,14 @@ public class LoginTest {
     public void setUp() {
 
 // инициализация decorView
-        mActivityScenarioRule.getScenario().onActivity(activity -> decorView = activity.getWindow().getDecorView());
+        mActivityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<AppActivity>() {
+            @Override
+            public void perform(AppActivity activity) {
+                decorView = activity.getWindow().getDecorView();
+            }
+        });
+
+        // mActivityScenarioRule.getScenario().onActivity(activity -> decorView = activity.getWindow().getDecorView());
         /* onView(withText(R.string.toast_msg)).
                 inRoot(RootMatchers.withDecorView(not(decorView)))
                 .check(matches(isDisplayed())); */
@@ -77,12 +87,15 @@ public class LoginTest {
     @Test
     public void loginFieldIsEmptyLoginTest() throws InterruptedException {
         LoginPage.logIn("", rightPassword);
-        //       Thread.sleep(500);
+        Thread.sleep(100);
 
+/**      обнаружение сообщения с использованием decorView */
         onView(withText(R.string.empty_login_or_password))
-                .inRoot(withDecorView(Matchers.not(decorView)))
+                //.inRoot(RootMatchers.withDecorView(not(decorView))) //вариант 1
+                .inRoot(withDecorView(Matchers.not(decorView)))       //вариант 2
                 .check(matches(isDisplayed()));
 
+/**       способ обнаружения сообщения с ToastMatcher  */
         onView(withText("Login and password cannot be empty")).inRoot(new DataHelper.ToastMatcher())
                 .check(matches(isDisplayed()));
     }
@@ -93,7 +106,7 @@ public class LoginTest {
 //        Thread.sleep(500);
 
         onView(withText(R.string.wrong_login_or_password))
-                .inRoot(withDecorView(Matchers.not(decorView)))
+                .inRoot(withDecorView(not(decorView)))
                 .check(matches(isDisplayed()));
 
 //        onView(withText("Something went wrong. Try again later.")).inRoot(new DataHelper.ToastMatcher())
