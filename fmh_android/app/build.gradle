@@ -20,7 +20,7 @@ android {
         versionCode 14
         versionName "1.0.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner 'io.qameta.allure.android.runners.AllureAndroidJUnitRunner'
     }
 
     compileOptions {
@@ -101,19 +101,21 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:32.7.2')
     implementation 'com.google.firebase:firebase-analytics-ktx'
     implementation 'com.google.firebase:firebase-crashlytics-ktx'
+    implementation group: 'net.datafaker', name: 'datafaker', version: '1.8.1'
 
+    //test implementation
     implementation 'androidx.test.espresso:espresso-idling-resource:3.4.0'
-
-
+    implementation 'androidx.test.espresso:espresso-contrib:3.7.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
     androidTestImplementation 'androidx.test:rules:1.6.1'
-    androidTestImplementation 'io.qameta.allure:allure-kotlin-android:2.4.0'
+
     androidTestImplementation 'androidx.test.espresso:espresso-intents:3.4.0'
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test:core:1.1.1'
 
-
+    //allure implementation
+    androidTestImplementation 'io.qameta.allure:allure-kotlin-android:2.4.0'
 }

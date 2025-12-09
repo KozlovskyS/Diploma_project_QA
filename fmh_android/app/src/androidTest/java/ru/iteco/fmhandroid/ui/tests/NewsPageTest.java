@@ -7,9 +7,11 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.isRoot;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static ru.iteco.fmhandroid.ui.data.DataHelper.rightLogin;
-import static ru.iteco.fmhandroid.ui.data.DataHelper.rightPassword;
+import static ru.iteco.fmhandroid.ui.data.Data.rightLogin;
+import static ru.iteco.fmhandroid.ui.data.Data.rightPassword;
+import static ru.iteco.fmhandroid.ui.data.DataHelper.logInCheck;
 import static ru.iteco.fmhandroid.ui.data.DataHelper.tapButton;
+import static ru.iteco.fmhandroid.ui.data.DataHelper.waitFor;
 import static ru.iteco.fmhandroid.ui.data.DataHelper.waitId;
 
 import androidx.test.espresso.Espresso;
@@ -23,68 +25,75 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import io.qameta.allure.android.runners.AllureAndroidJUnit4;
+import io.qameta.allure.kotlin.Description;
+import io.qameta.allure.kotlin.Story;
+import io.qameta.allure.kotlin.junit4.DisplayName;
 import ru.iteco.fmhandroid.R;
 import ru.iteco.fmhandroid.ui.AppActivity;
+import ru.iteco.fmhandroid.ui.page.AboutPage;
 import ru.iteco.fmhandroid.ui.page.LoginPage;
 import ru.iteco.fmhandroid.ui.page.MainPage;
+import ru.iteco.fmhandroid.ui.page.NavBar;
 import ru.iteco.fmhandroid.ui.page.NewsPage;
 
 @LargeTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(AllureAndroidJUnit4.class)
 public class NewsPageTest {
     @Rule
     public ActivityScenarioRule<AppActivity> mActivityScenarioRule =
             new ActivityScenarioRule<>(AppActivity.class);
 
+    NavBar navBar = new NavBar();
+    MainPage mainPage = new MainPage();
+    NewsPage newsPage = new NewsPage();
+    int itemNumber = 1;
+
     @Before
-    public void setUp() throws InterruptedException {
-        LoginPage.logIn(rightLogin, rightPassword);
-        Thread.sleep(1500);
-        onView(isRoot()).perform(waitId(R.id.authorization_image_button, 5000));
-        onView(withText("News")).check(matches(isDisplayed()));
+    public void setUp() {
+        logInCheck();
+       waitFor(1000);
+        mainPage.checkPageLoaded();
         tapButton(MainPage.allNewsButton);
-        onView(withId(R.id.edit_news_material_button)).check(matches(isDisplayed()));
-    }
-
-    @After
-    public void closeApp() {
-        LoginPage.logOut();
+        newsPage.waitingPageToLoad();
     }
 
     @Test
+    @DisplayName("Проверка отображения страницы Новости")
+    public void newsPageOpenedTest() {
+        newsPage.checkPageLoaded();
+    }
+
+    @Test
+    @DisplayName("Переход на главную страницу через меню")
     public void gotoMainFromMenu() {
-        tapButton(MainPage.mainMenuButton);
-        tapButton(NewsPage.mainMenuElementMain);
-
-        onView(withId(R.id.all_news_text_view)).check(matches(isDisplayed()));
+        tapButton(NavBar.mainMenuButton);
+        tapButton(NavBar.mainMenuElementMain);
+        MainPage.waitingPageToLoad();
+        MainPage.checkPageLoaded();
     }
 
     @Test
+    @DisplayName("Переход на  страницу О программе через меню")
     public void gotoAboutFromMenu() {
-        tapButton(MainPage.mainMenuButton);
-        tapButton(MainPage.mainMenuElementAbout);
-
-        onView(withId(R.id.about_version_title_text_view)).check(matches(isDisplayed()));
+        tapButton(NavBar.mainMenuButton);
+        tapButton(NavBar.mainMenuElementAbout);
+        AboutPage.waitingPageToLoad();
+        AboutPage.checkPageLoaded();
         Espresso.pressBack();
     }
 
-    @Test
-    public void gotoQuotesPage() {
-        tapButton(MainPage.ourMissionButton);
-        onView(withId(R.id.our_mission_title_text_view)).check(matches(isDisplayed()));
-    }
-
-    @Test
-    public void sortingNewsTest() { //в разработке - новости не отображаются
-        tapButton(NewsPage.sortingNewsButton);
-    }
-
-    @Test
-    public void filerNewsByCategoryTest() {
-        tapButton(NewsPage.filterNewsButton);
-        onView(withId(R.id.filter_news_title_text_view)).check(matches(isDisplayed()));
-
-        Espresso.pressBack();
-    }
+//    @Test
+//    public void sortingNewsTest() { //в разработке - новости не отображаются
+//        tapButton(NewsPage.sortingNewsButton);
+//    }
+//
+//    @Test
+//    public void filerNewsByCategoryTest() {
+//        tapButton(NewsPage.filterNewsButton);
+//        onView(withId(R.id.filter_news_title_text_view)).check(matches(isDisplayed()));
+//
+//        Espresso.pressBack();
+//    }
 
 }

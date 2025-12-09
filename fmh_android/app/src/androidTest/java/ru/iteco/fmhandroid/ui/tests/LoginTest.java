@@ -2,39 +2,27 @@ package ru.iteco.fmhandroid.ui.tests;
 
 
 import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
-import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.RootMatchers.withDecorView;
-import static androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.isRoot;
-import static androidx.test.espresso.matcher.ViewMatchers.supportsInputMethods;
-import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
-import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-
-import static ru.iteco.fmhandroid.ui.data.DataHelper.rightLogin;
-import static ru.iteco.fmhandroid.ui.data.DataHelper.rightPassword;
-import static ru.iteco.fmhandroid.ui.data.DataHelper.waitId;
-import static ru.iteco.fmhandroid.ui.data.DataHelper.wrongLogin;
-import static ru.iteco.fmhandroid.ui.page.LoginPage.authImageButton;
-import static ru.iteco.fmhandroid.ui.page.LoginPage.logOut;
-import static ru.iteco.fmhandroid.ui.page.LoginPage.loginTextField;
-import static ru.iteco.fmhandroid.ui.page.LoginPage.passwordTextField;
-import static ru.iteco.fmhandroid.ui.page.LoginPage.signInButton;
+import static io.qameta.allure.kotlin.Allure.step;
+import static ru.iteco.fmhandroid.ui.data.Data.rightLogin;
+import static ru.iteco.fmhandroid.ui.data.Data.rightPassword;
+import static ru.iteco.fmhandroid.ui.data.Data.sqlInject;
+import static ru.iteco.fmhandroid.ui.data.Data.toastMsgCannotBeEmpty;
+import static ru.iteco.fmhandroid.ui.data.Data.toastMsgSomethingWentWrong;
+import static ru.iteco.fmhandroid.ui.data.Data.wrongLogin;
+import static ru.iteco.fmhandroid.ui.data.Data.xssInject;
+import static ru.iteco.fmhandroid.ui.data.DataHelper.logOutCheck;
+import static ru.iteco.fmhandroid.ui.data.DataHelper.waitFor;
 
 import android.view.View;
 
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.ViewInteraction;
 import androidx.test.espresso.matcher.RootMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
 import org.hamcrest.Matchers;
@@ -43,13 +31,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import ru.iteco.fmhandroid.R;
+import io.qameta.allure.android.runners.AllureAndroidJUnit4;
+import io.qameta.allure.kotlin.junit4.DisplayName;
 import ru.iteco.fmhandroid.ui.AppActivity;
 import ru.iteco.fmhandroid.ui.data.DataHelper;
 import ru.iteco.fmhandroid.ui.page.LoginPage;
+import ru.iteco.fmhandroid.ui.page.MainPage;
 
 @LargeTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(AllureAndroidJUnit4.class)
 public class LoginTest {
 
     @Rule
@@ -59,7 +49,6 @@ public class LoginTest {
 
     @Before
     public void setUp() {
-
 // инициализация decorView
         mActivityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<AppActivity>() {
             @Override
@@ -67,50 +56,90 @@ public class LoginTest {
                 decorView = activity.getWindow().getDecorView();
             }
         });
-
-        // mActivityScenarioRule.getScenario().onActivity(activity -> decorView = activity.getWindow().getDecorView());
-        /* onView(withText(R.string.toast_msg)).
-                inRoot(RootMatchers.withDecorView(not(decorView)))
-                .check(matches(isDisplayed())); */
+        logOutCheck();
     }
 
+    LoginPage loginPage = new LoginPage();
+    MainPage mainPage = new MainPage();
+
     @Test
-    public void successLoginTest() throws InterruptedException {
-        LoginPage loginPage = new LoginPage();
+    @DisplayName("Авторизация с валидными данными")
+    public void successLoginTest() {
         loginPage.logIn(rightLogin, rightPassword);
-        Thread.sleep(1500);
-        onView(isRoot()).perform(waitId(R.id.authorization_image_button, 5000));
-        authImageButton.check(matches(isDisplayed()));
-        logOut();
+        waitFor(1500);
+        mainPage.waitingPageToLoad();
+        mainPage.checkPageLoaded();
     }
 
     @Test
-    public void loginFieldIsEmptyLoginTest() throws InterruptedException {
+    @DisplayName("Авторизация с пустым полем логина")  // 1 способ обнаружения всплывающего сообщения
+    public void loginFieldIsEmptyLoginTest() {
         LoginPage.logIn("", rightPassword);
-        Thread.sleep(100);
-
-/**      обнаружение сообщения с использованием decorView */
-        onView(withText(R.string.empty_login_or_password))
-                //.inRoot(RootMatchers.withDecorView(not(decorView))) //вариант 1
-                .inRoot(withDecorView(Matchers.not(decorView)))       //вариант 2
-                .check(matches(isDisplayed()));
-
-/**       способ обнаружения сообщения с ToastMatcher  */
-        onView(withText("Login and password cannot be empty")).inRoot(new DataHelper.ToastMatcher())
+        waitFor(1500);
+        step("Проверка сообщения *" + toastMsgCannotBeEmpty);
+        /**      обнаружение сообщения с использованием decorView */
+        onView(withText(toastMsgCannotBeEmpty))
+                .inRoot(withDecorView(not(decorView)))
+                //.inRoot(RootMatchers.withDecorView(not(decorView))) //вариант 2
                 .check(matches(isDisplayed()));
     }
 
     @Test
-    public void wrongLoginLoginTest() throws InterruptedException {
-        LoginPage.logIn(wrongLogin, rightPassword);
-//        Thread.sleep(500);
+    @DisplayName("Авторизация с пустым полем логина")  // 2 способ обнаружения всплывающего сообщения
+    public void loginFieldIsEmptyLoginTest2() {
+        LoginPage.logIn("", rightPassword);
+        waitFor(1500);
+        step("Проверка сообщения *" + toastMsgCannotBeEmpty);
+        /**      обнаружение сообщения с использованием decorView */
+        onView(withText(toastMsgCannotBeEmpty))
+               // .inRoot(withDecorView(Matchers.not(decorView)))
+                .inRoot(RootMatchers.withDecorView(not(decorView))) //вариант 2
+                .check(matches(isDisplayed()));
 
-        onView(withText(R.string.wrong_login_or_password))
+    }
+
+    @Test
+    @DisplayName("Авторизация с пустым полем логина")  // 3 способ обнаружения всплывающего сообщения
+    public void loginFieldIsEmptyLoginTest3() {
+        LoginPage.logIn("", rightPassword);
+        waitFor(1500);
+        step("Проверка сообщения *" + toastMsgCannotBeEmpty);
+/**       обнаружение сообщения с ToastMatcher  */
+        onView(withText(toastMsgCannotBeEmpty)).inRoot(new DataHelper.ToastMatcher())
+                .check(matches(isDisplayed()));
+    }
+
+    @Test
+    @DisplayName("Авторизация с невалидными данными")
+    public void wrongLoginLoginTest() {
+        LoginPage.logIn(wrongLogin, rightPassword);
+        waitFor(500);
+        step("Проверка сообщения *" + toastMsgSomethingWentWrong);
+        onView(withText(toastMsgSomethingWentWrong))
                 .inRoot(withDecorView(not(decorView)))
                 .check(matches(isDisplayed()));
+    }
 
-//        onView(withText("Something went wrong. Try again later.")).inRoot(new DataHelper.ToastMatcher())
-//                .check(matches(isDisplayed()));
+    @Test
+    @DisplayName("Тест авторизации с SQL-иньекцией")
+    public void injectionSQLLoginTest() {
+        LoginPage.logIn(sqlInject, rightPassword);
+        waitFor(500);
+        step("Проверка сообщения *" + toastMsgSomethingWentWrong);
+        onView(withText(toastMsgSomethingWentWrong))
+                .inRoot(withDecorView(not(decorView)))
+                .check(matches(isDisplayed()));
+    }
+
+    @Test
+    @DisplayName("Тест авторизации с XSS-иньекцией")
+    public void injectionXSSLoginTest() {
+        LoginPage.logIn(xssInject, rightPassword);
+        waitFor(500);
+        step("Проверка сообщения *" + toastMsgSomethingWentWrong);
+        onView(withText(toastMsgSomethingWentWrong))
+                .inRoot(withDecorView(not(decorView)))
+                .check(matches(isDisplayed()));
     }
 
 }
